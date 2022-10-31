@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
+<style>
+body {
+  margin: 0 auto;
+  max-width: 800px;
+  padding: 0 20px;
+}
+
+.container {
+  border: 2px solid #dedede;
+  background-color: #f1f1f1;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.darker {
+  border-color: #ccc;
+  background-color: #ddd;
+}
+
+.container::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+.container img {
+  float: left;
+  max-width: 60px;
+  width: 100%;
+  margin-right: 20px;
+  border-radius: 50%;
+}
+
+.container img.right {
+  float: right;
+  margin-left: 20px;
+  margin-right:0;
+}
+
+.time-right {
+  float: right;
+  color: #aaa;
+}
+
+.time-left {
+  float: left;
+  color: #999;
+}
+
+
+
+</style>
+</head>
+<body>
+
+<h2 style="float: left;">Chat Messages</h2>
+<h3 style="float:right"><a href="logout.html">Logout</a></h3>
+<br><br>
+<button type="button"  style="width: 100%" id="limit"  id="add" class="btn btn-warning" >Load old messages</button>
+
+<span id="chatc"></span>
+<input type="text" style="width: 100%;" placeholder="Write a message" id="message" value="">
+<br>
+<br>
+
+<button type="button"  style="width: 100%" id="add" class="btn btn-primary" >Send Message</button>
+
+<script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.9.4/firebase-app.js";
+    // import { getFirestore, collection, getDocs } from 'firebase/firestore/lite.js';
+    import {getFirestore,serverTimestamp,collection,addDoc,limitToLast, getDoc,query, orderBy, limit,onSnapshot, doc,getDocs,deleteField,updateDoc,deleteDoc,setDoc } from 'https://www.gstatic.com/firebasejs/9.9.4/firebase-firestore.js'
+    import { getAuth,createUserWithEmailAndPassword,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.9.4/firebase-auth.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+  
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyA3-6Ex2XDJJ16RStliz-NaN97nkfJySoE",
+      authDomain: "todo-c7c46.firebaseapp.com",
+      projectId: "todo-c7c46",
+      storageBucket: "todo-c7c46.appspot.com",
+      messagingSenderId: "997105917073",
+      appId: "1:997105917073:web:b2097c9bea9296ea853330"
+    };
+  
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    var email=""
+    var limiter1=0
+    onAuthStateChanged(auth, (user) => {
+  if (user) {
+
+    // User is signed in, see docs for a list of available properties
+    // https://firebase.google.com/docs/reference/js/firebase.User
+    const uid = user.uid;
+    email = user.email
+   if(!email){
+window.location="login.html"
+}
+    
+    // ...
+  } else {
+     if(!email){
+window.location="login.html"
+}
+    // ...
+  }
+}); 
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+} 
+
+limiter()
+let limter12 = document.getElementById("limit")
+limter12.addEventListener("click", limiter);
+function limiter(){
+limiter1=limiter1+4
+
+
+const q = query(collection(db, "fchat"));
+const q1 =query(q, orderBy("timestamp"),limitToLast(limiter1));
+
+const unsubscribe = onSnapshot(q1, (querySnapshot) => {
+
+// let table = document.getElementById('chat')
+// table.innerHTML = ""
+ let chatc = document.getElementById("chatc")
+ chatc.innerHTML=''
+
+querySnapshot.forEach((doc) => {
+console.log(doc.id, " => ", doc.data());
+let data = doc.data()
+
+let row =`
+<div class="container" id="chat">
+  <p>${data.user}</p>
+  <p>${data.message}</p>
+  <span class="time-right">${data.chathm}</span>
+</div>`
+
+chatc = document.getElementById('chatc')
+chatc.innerHTML += row
+let element = document.getElementsByClassName("btn btn-danger");
+for(let x=0;x<element.length;x++){
+
+element[x].addEventListener("click", deleteCity);
+
+}
+});
+
+});
+}
+
+
+
+let add = document.getElementById("add")
+add.addEventListener("click", addMessage);
+
+
+// async function deleteCity(){
+
+//  await deleteDoc(doc(db, "cities", this.id));
+
+
+
+// }
+async function addMessage(){
+ name = document.getElementById("message").value
+var date = new Date;
+
+var minutes = date.getMinutes();
+var hour = date.getHours();
+let time=""
+minutes=minutes
+hour=hour
+time = hour+":"+minutes
+var btn = document.getElementById('add');
+        btn.disabled = true;
+        await sleep(400)
+        btn.disabled = false;
+if(name){
+    
+const docRef = await addDoc(collection(db, "fchat"), {
+message: name,
+chathm:time,
+user:email
+});
+const updateTimestamp = await updateDoc(docRef, {
+    timestamp: serverTimestamp()
+});
+
+document.getElementById("message").value=""
+}
+}
+
+  </script>
+
+
+</body>
+</html>
